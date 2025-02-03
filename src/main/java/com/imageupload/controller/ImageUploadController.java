@@ -1,25 +1,39 @@
 package com.imageupload.controller;
 
 import com.imageupload.dto.ImageInfo;
+import com.imageupload.dto.UploadResponse;
+import com.imageupload.dto.UserInfo;
 import com.imageupload.service.ImageUpload;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 public class ImageUploadController {
 
-    @Autowired
-    private ImageUpload imageUpload;
+    private final ImageUpload imageUpload;
+
+
+    public ImageUploadController(ImageUpload imageUpload) {
+        this.imageUpload = imageUpload;
+    }
+
+    UserInfo userInformation;
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadImage(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+    public ResponseEntity<?> uploadImage(@RequestPart("file") MultipartFile file, @RequestPart("userdata") UserInfo userInfo) {
+
+        userInformation = new UserInfo(userInfo.getUserId(), userInfo.getName(), userInfo.getPassword(), userInfo.getEmail());
         try {
-            return (ResponseEntity.ok(imageUpload.uploadImage(file)));
+
+            ImageInfo output = imageUpload.uploadImage(file);
+            UploadResponse response = new UploadResponse(userInfo, output);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(e.getMessage());
+           return ResponseEntity.internalServerError().body(e.getMessage());
         }
+
+
     }
 
     @DeleteMapping("/delete")
